@@ -1,6 +1,10 @@
 github.com/Zauberstuhl/go-xml v0.0.0-20180122175953-534ffa216723 h1:7oEP7JX/Jjo/rI+imdAJaGjxXJH1fOVr7v96CLNtNxw=
 github.com/Zauberstuhl/go-xml v0.0.0-20180122175953-534ffa216723/go.mod h1:Tt5FuJdSciQtwVZkp+f+hhH5Q4qXmJmIZSjGD+PJcJA=
 github.com/davecgh/go-spew v1.1.0 h1:ZDRjVQ15GmhC3fiQ8ni8+OwkZQO4DARzQgrnXU1Liz8=
+github.com/gorilla/mux v1.8.0 h1:i40aqfkR1h2SlN9hojwV5ZA91wcXFOvkdNIeFDP5koI=
+github.com/gorilla/mux v1.8.0/go.mod h1:DVbg23sWSpFRCP0SfiEN6jmj59UnW/n46BH5rLB71So=
+github.com/marcinwyszynski/geopoint v0.0.0-20140302213024-cf2a6f750c5b h1:XBF8THPBy28s2ryI7+/Jf/847unLWxYMpJveX5Kox+0=
+github.com/marcinwyszynski/geopoint v0.0.0-20140302213024-cf2a6f750c5b/go.mod h1:z1oqhOuuYpPHmUmAK2aNygKFlPdb4o3PppQnVTRFdrI=
 github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZbAQM=
 github.com/stretchr/testify v1.7.0 h1:nwc3DEeHmmLAfoZucVR881uASk0Mfjw8xYJ99tb5CcY=
 github.com/sudhanshuraheja/go-garmin-gpx v1.0.2 h1:Yyw5FgJ0MPtL0I5CUGRpLSwWqi+PQGcbOM8fITyl82U=
