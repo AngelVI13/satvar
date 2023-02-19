@@ -3,6 +3,7 @@ module github.com/AngelVI13/satvar
 go 1.18
 
 require (
+	github.com/go-echarts/go-echarts/v2 v2.2.5
 	github.com/gofiber/fiber/v2 v2.42.0
 	github.com/gofiber/template v1.7.5
 	github.com/marcinwyszynski/geopoint v0.0.0-20140302213024-cf2a6f750c5b

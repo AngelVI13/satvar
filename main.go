@@ -3,9 +3,14 @@ package main
 import (
 	"embed"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
+	"os"
 
+	"github.com/go-echarts/go-echarts/v2/charts"
+	"github.com/go-echarts/go-echarts/v2/components"
+	"github.com/go-echarts/go-echarts/v2/opts"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/filesystem"
 	"github.com/gofiber/template/html"
@@ -29,6 +34,12 @@ var (
 	LocationUrlFull = fmt.Sprintf("%s/:lat/:long", LocationUrl)
 )
 
+var (
+	Kms             geo.Kilometres = 0.0
+	GeoPoints       []*geo.GeoPoint
+	ElevationPoints []float64
+)
+
 // TODO: visualize gps coordinates on map:
 // https://www.here.com/learn/blog/reverse-geocoding-a-location-using-golang
 func main() {
@@ -49,33 +60,27 @@ func main() {
 
 	track := g.Tracks[0]
 
-	var (
-		kms             geo.Kilometres = 0.0
-		geoPoints       []*geo.GeoPoint
-		elevationPoints []float64
-	)
-
 	for _, segment := range track.TrackSegments {
 		for _, point := range segment.TrackPoint {
-			elevationPoints = append(elevationPoints, point.Elevation)
+			ElevationPoints = append(ElevationPoints, point.Elevation)
 
 			gPoint := geo.NewGeoPoint(geo.Degrees(point.Latitude), geo.Degrees(point.Longitude))
-			geoPoints = append(geoPoints, gPoint)
+			GeoPoints = append(GeoPoints, gPoint)
 
-			if len(geoPoints) <= 1 {
+			if len(GeoPoints) <= 1 {
 				continue
 			}
 
-			kms += gPoint.DistanceTo(geoPoints[len(geoPoints)-2], geo.Haversine)
+			Kms += gPoint.DistanceTo(GeoPoints[len(GeoPoints)-2], geo.Haversine)
 
 		}
 	}
 
-	log.Println("Kilometres", kms)
-	log.Println("#Points", len(elevationPoints))
+	log.Println("Kilometres", Kms)
+	log.Println("#Points", len(ElevationPoints))
 
 	// TODO: determine chunkSize automatically based on number of elevation points
-	elevationGain, elevationLoss := calculateElevation(elevationPoints, 60)
+	elevationGain, elevationLoss := calculateElevation(ElevationPoints, 60)
 	log.Println("Gain", elevationGain)
 	log.Println("Loss", elevationLoss)
 
@@ -119,7 +124,18 @@ func main() {
 func HandleIndex(c *fiber.Ctx) error {
 	data := flash.Get(c)
 	data["Title"] = "Satvar"
+
+	// TODO: currently graph does not look good - fix it
+	path, err := createGraph(GeoPoints)
+	if err != nil {
+		flash.WithError(c, flashMessage(fmt.Sprintf(
+			"error creating gps graph: %v", err), LevelPrimary))
+		return c.Render(IndexView, data)
+	}
+
 	data["Image"] = "assets/track_1.png"
+	log.Println(path)
+	// TODO: pass graph html to template via `data`
 
 	return c.Render(IndexView, data)
 }
@@ -132,6 +148,23 @@ func HandleLocation(c *fiber.Ctx) error {
 	log.Println(longitude, latitude)
 
 	return c.RedirectBack(IndexUrl)
+}
+
+type MessageLevel string
+
+const (
+	LevelPrimary MessageLevel = "primary"
+	LevelSuccess MessageLevel = "success"
+	LevelWarning MessageLevel = "warning"
+	LevelDanger  MessageLevel = "danger"
+)
+
+func flashMessage(message string, level MessageLevel) fiber.Map {
+	log.Println(message)
+	return fiber.Map{
+		"Message": message,
+		"Level":   level,
+	}
 }
 
 func resetQueryString(c *fiber.Ctx) {
@@ -197,4 +230,46 @@ func calculateElevation(points []float64, chunkSize int) (gain, loss float64) {
 		}
 	}
 	return gain, loss
+}
+
+func createGraph(points []*geo.GeoPoint) (path string, err error) {
+	path = "scatter.html"
+
+	page := components.NewPage()
+	page.AddCharts(
+		scatterBase(points),
+	)
+	f, err := os.Create(path)
+	if err != nil {
+		return "", err
+	}
+
+	page.Render(io.MultiWriter(f))
+	return path, nil
+}
+
+func scatterBase(points []*geo.GeoPoint) *charts.Scatter {
+	scatter := charts.NewScatter()
+	scatter.SetGlobalOptions(
+		charts.WithTitleOpts(opts.Title{Title: "basic scatter example"}),
+	)
+
+	numberOfPoints := len(points)
+	xAxis := make([]geo.Degrees, numberOfPoints)
+	scatterItems := make([]opts.ScatterData, numberOfPoints)
+
+	for _, point := range points {
+		xAxis = append(xAxis, point.Longitude)
+		scatterItems = append(scatterItems, opts.ScatterData{
+			Value: point.Latitude,
+			// NOTE: can also use "arrow" but have to compute angel of rotation
+			Symbol:       "circle",
+			SymbolSize:   20,
+			SymbolRotate: 10,
+		})
+	}
+
+	scatter.SetXAxis(xAxis).AddSeries("Points", scatterItems)
+
+	return scatter
 }
