@@ -1,14 +1,26 @@
 package main
 
 import (
-	"fmt"
-	"github.com/gorilla/mux"
-	"html/template"
+	"embed"
 	"log"
 	"net/http"
 
+	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2/middleware/filesystem"
+	"github.com/gofiber/template/html"
+	"github.com/sujit-baniya/flash"
+
 	geo "github.com/marcinwyszynski/geopoint"
 	gpx "github.com/sudhanshuraheja/go-garmin-gpx"
+)
+
+//go:embed views/*
+var viewsfs embed.FS
+
+const (
+	IndexView      = "views/index"
+	MainLayoutView = "views/layouts/main"
+	IndexUrl       = "/"
 )
 
 // TODO: visualize gps coordinates on map:
@@ -56,21 +68,74 @@ func main() {
 	log.Println("Kilometres", kms)
 	log.Println("#Points", len(elevationPoints))
 
+	// TODO: determine chunkSize automatically based on number of elevation points
 	elevationGain, elevationLoss := calculateElevation(elevationPoints, 60)
 	log.Println("Gain", elevationGain)
 	log.Println("Loss", elevationLoss)
-	// log.Println(elevationPoints)
 
+	engine := html.NewFileSystem(http.FS(viewsfs), ".html")
+
+	// TODO: maybe we can use template funcs to provide location to backend
+	// templatefuncs.Register(db, engine)
+
+	// Pass the engine to the Views
+	app := fiber.New(fiber.Config{
+		Views:       engine,
+		ViewsLayout: MainLayoutView,
+		BodyLimit:   50 * 1024 * 1024, // 50 MB
+	})
+
+	// Middleware
+	app.Use("/css", cssFileServer())
+	app.Use(loggingHandler)
+
+	// index
+	app.Get(
+		IndexUrl,
+		HandleIndex,
+	)
+
+	log.Fatal(app.Listen(":3000"))
 	/*
-		mux := mux.NewRouter()
-
-		mux.HandleFunc("/", home)
 		mux.HandleFunc("/location/{lat}/{long}", location)
-
-		http.ListenAndServe(":8080", mux)
 	*/
+
+	// Generate png image from gps points & current location.
+	// Set the generated image as an html element to be displayed.
+	// In JS obtain location once per second and call backend which
+	// regenerates image and refreshes display
 }
 
+func HandleIndex(c *fiber.Ctx) error {
+	data := flash.Get(c)
+	data["Title"] = "Keyword storage"
+
+	return c.Render(IndexView, data)
+}
+
+func loggingHandler(c *fiber.Ctx) error {
+	uri := c.Request().URI().Path()
+	method := c.Request().Header.Method()
+
+	log.Printf("%s %s", method, uri)
+
+	return c.Next()
+}
+
+func cssFileServer() fiber.Handler {
+	return filesystem.New(filesystem.Config{
+		Root: http.FS(viewsfs),
+		// TODO: This is hardcoded
+		PathPrefix: "views/static/css",
+		Browse:     true,
+	})
+}
+
+// calculateElevation Calculates elevation gain & loss give a slice of elevation data.
+// Here chunkSize indicates the smoothing filter size. Since GPS tracks usually
+// record at approx. once per second if you set a chunkSize of 60 -> each 60
+// elevation points will be grouped together and one average value will be produced
+// for them.
 func calculateElevation(points []float64, chunkSize int) (gain, loss float64) {
 	var temp = make([]float64, chunkSize)
 	var avg []float64
@@ -98,36 +163,4 @@ func calculateElevation(points []float64, chunkSize int) (gain, loss float64) {
 		}
 	}
 	return gain, loss
-}
-
-func home(w http.ResponseWriter, r *http.Request) {
-
-	var templates = template.Must(template.New("geolocate").ParseFiles("getlocation.html"))
-
-	err := templates.ExecuteTemplate(w, "getlocation.html", nil)
-
-	if err != nil {
-		panic(err)
-	}
-
-	prompt := "Detecting your location. Please click 'Allow' button"
-	w.Write([]byte(prompt))
-
-}
-
-func location(w http.ResponseWriter, r *http.Request) {
-
-	vars := mux.Vars(r)
-	lat := vars["lat"]
-	long := vars["long"]
-
-	w.Write([]byte(fmt.Sprintf("Lat is %s \n", lat)))
-
-	w.Write([]byte(fmt.Sprintf("Long is %s \n", long)))
-
-	fmt.Printf("Lat is %s and Long is %s \n", lat, long)
-
-	// if you want to get timezone from latitude and longitude
-	// checkout http://www.geonames.org/export/web-services.html#timezone
-
 }
