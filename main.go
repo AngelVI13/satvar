@@ -93,6 +93,7 @@ func main() {
 
 	// Middleware
 	app.Use("/css", cssFileServer())
+	app.Use("/assets", assetsFileServer()) // TODO: temporary remove later
 	app.Use(loggingHandler)
 
 	// index
@@ -118,6 +119,7 @@ func main() {
 func HandleIndex(c *fiber.Ctx) error {
 	data := flash.Get(c)
 	data["Title"] = "Satvar"
+	data["Image"] = "assets/track_1.png"
 
 	return c.Render(IndexView, data)
 }
@@ -150,6 +152,15 @@ func cssFileServer() fiber.Handler {
 		Root: http.FS(viewsfs),
 		// TODO: This is hardcoded
 		PathPrefix: "views/static/css",
+		Browse:     true,
+	})
+}
+
+func assetsFileServer() fiber.Handler {
+	return filesystem.New(filesystem.Config{
+		Root: http.FS(viewsfs),
+		// TODO: This is hardcoded
+		PathPrefix: "views/static/assets",
 		Browse:     true,
 	})
 }
