@@ -1,62 +1,69 @@
 <div class="container py-4">
-    <div class="px-5 py-3 mb-4 bg-light rounded-3 border">
-        <div class="container-fluid py-5">
-            <h2 class="display-6 fw-bold">Keyword Management Tool</h2>
-            <p class="col-md-10" style="font-size: medium;">
-                This is a cross-platform (Win/Linux/MacOS) web application that implements the `Keyword Definition Process`. 
-                <br>
-                The tool is designed to be independent from the test automation system and merely provides a way to:
-                <br>
-                <ul>
-                    <li>Keep track of project keywords</li>
-                    <li>Request new ones or edit/delete existing ones</li>
-                    <li>Keep history of all changes</li>
-                    <li>View differences between keyword versions</li>
-                    <li>Share keywords with other teams/projects</li>
-                    <li>... and many more keyword related features.</li>
-                </ul>
-            </p>
-            <a href="https://dev.azure.com/FreseniusMedicalCare/Engineering%20System/_git/ta-keyword-manager" target="_blank" class="btn btn-outline-primary ms-2" role="button">
-                Repository
-            </a>
-            <a href="https://dev.azure.com/FreseniusMedicalCare/Engineering%20System/_workitems/edit/173279" target="_blank" class="btn btn-outline-primary ms-2"
-               role="button">
-                Backlog
-            </a>
-        </div>
+<div class="px-5 py-3 mb-4 bg-light rounded-3 border">
+    <div class="container-fluid py-5">
+        <h2 class="display-6 fw-bold">Keyword Management Tool</h2>
+        <p class="col-md-10" style="font-size: medium;">
+            This is a cross-platform (Win/Linux/MacOS) web application that implements the `Keyword Definition Process`.
+            <br>
+            The tool is designed to be independent from the test automation system and merely provides a way to:
+            <br>
+            <ul>
+                <li>Keep track of project keywords</li>
+                <li>Request new ones or edit/delete existing ones</li>
+                <li>Keep history of all changes</li>
+                <li>View differences between keyword versions</li>
+                <li>Share keywords with other teams/projects</li>
+                <li>... and many more keyword related features.</li>
+            </ul>
+        </p>
+        <a href="https://dev.azure.com/FreseniusMedicalCare/Engineering%20System/_git/ta-keyword-manager" target="_blank" class="btn btn-outline-primary ms-2" role="button">
+            Repository
+        </a>
+        <a href="https://dev.azure.com/FreseniusMedicalCare/Engineering%20System/_workitems/edit/173279" target="_blank" class="btn btn-outline-primary ms-2"
+           role="button">
+            Backlog
+        </a>
     </div>
-
-
-  <div class="row align-items-start">
-    <div class="col-md-3">
-        <div class="px-3">
-            <a href="/business_keywords">
-                <i class="fs-4 bi-card-list"></i> <span>Business keywords</span>
-            </a>
-            <p>
-                Count: {{.CountBusiness}}
-            </p>
-        </div>
-    </div>
-    <div class="col-md-3">
-        <div class="px-3">
-            <a href="/technical_keywords">
-                <i class="fs-4 bi-card-list"></i> <span>Technical keywords</span>
-            </a>
-            <p>
-                Count: {{.CountTechnical}}
-            </p>
-        </div>
-    </div>
-    <div class="col-md-3">
-        <div class="px-3">
-            <a href="/all_keywords">
-                <i class="fs-4 bi-card-list"></i> <span>All keywords</span>
-            </a>
-            <p>
-                Count: {{.CountAll}}
-            </p>
-        </div>
-    </div>
-  </div>
 </div>
+</div>
+
+<script>
+function initialize() {
+    // Try HTML5 geolocation
+    if(navigator.geolocation) {
+        var intervalId = window.setInterval(function(){
+            navigator.geolocation.getCurrentPosition(function(position) {
+                // capture latitude and longtitude... pass back to backend
+                handleGeolocationData(position.coords.latitude,position.coords.longitude);
+            }, function() {
+                handleNoGeolocation(true);
+            });
+        }, 5000);
+        // NOTE: To stop the loop we can use
+        // clearInterval(intervalId)
+    } else {
+        // Browser doesn't support Geolocation
+        handleNoGeolocation(false);
+    }
+}
+
+function handleGeolocationData(latitude, longitude){
+    $.ajax({
+        type: "POST",
+        url: "/location/"+latitude+"/"+longitude,
+        data: "",
+    });
+}
+
+// TODO: I don't think this func actually does anything
+function handleNoGeolocation(errorFlag) {
+    if (errorFlag) {
+        var content = 'Error: The Geolocation service failed.';
+    } else {
+        var content = 'Error: Your browser doesn\'t support geolocation.';
+    }
+}
+
+document.addEventListener('DOMContentLoaded', initialize);
+
+</script>

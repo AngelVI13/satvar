@@ -2,6 +2,7 @@ package main
 
 import (
 	"embed"
+	"fmt"
 	"log"
 	"net/http"
 
@@ -21,6 +22,11 @@ const (
 	IndexView      = "views/index"
 	MainLayoutView = "views/layouts/main"
 	IndexUrl       = "/"
+	LocationUrl    = "/location"
+)
+
+var (
+	LocationUrlFull = fmt.Sprintf("%s/:lat/:long", LocationUrl)
 )
 
 // TODO: visualize gps coordinates on map:
@@ -95,10 +101,13 @@ func main() {
 		HandleIndex,
 	)
 
-	log.Fatal(app.Listen(":3000"))
-	/*
-		mux.HandleFunc("/location/{lat}/{long}", location)
-	*/
+	// location
+	app.Post(
+		LocationUrlFull,
+		HandleLocation,
+	)
+
+	log.Fatal(app.Listen(":5000"))
 
 	// Generate png image from gps points & current location.
 	// Set the generated image as an html element to be displayed.
@@ -108,9 +117,23 @@ func main() {
 
 func HandleIndex(c *fiber.Ctx) error {
 	data := flash.Get(c)
-	data["Title"] = "Keyword storage"
+	data["Title"] = "Satvar"
 
 	return c.Render(IndexView, data)
+}
+
+func HandleLocation(c *fiber.Ctx) error {
+	resetQueryString(c)
+
+	longitude := c.Params("long")
+	latitude := c.Params("lat")
+	log.Println(longitude, latitude)
+
+	return c.RedirectBack(IndexUrl)
+}
+
+func resetQueryString(c *fiber.Ctx) {
+	c.Request().URI().SetQueryString("")
 }
 
 func loggingHandler(c *fiber.Ctx) error {
