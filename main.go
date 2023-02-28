@@ -3,11 +3,16 @@ package main
 import (
 	"embed"
 	"fmt"
+	"image"
+	"image/color"
+	"image/png"
 	"io"
 	"log"
+	"math"
 	"net/http"
 	"os"
 
+	"github.com/disintegration/imaging"
 	"github.com/go-echarts/go-echarts/v2/charts"
 	"github.com/go-echarts/go-echarts/v2/components"
 	"github.com/go-echarts/go-echarts/v2/opts"
@@ -126,16 +131,17 @@ func HandleIndex(c *fiber.Ctx) error {
 	data["Title"] = "Satvar"
 
 	// TODO: currently graph does not look good - fix it
-	path, err := createGraph(GeoPoints)
+	// path, err := createGraph(GeoPoints)
+	path := "views/static/assets/map.png"
+	err := createMapImage(GeoPoints, path)
 	if err != nil {
 		flash.WithError(c, flashMessage(fmt.Sprintf(
 			"error creating gps graph: %v", err), LevelPrimary))
 		return c.Render(IndexView, data)
 	}
 
-	data["Image"] = "assets/track_1.png"
+	data["Image"] = "assets/map.png"
 	log.Println(path)
-	// TODO: pass graph html to template via `data`
 
 	return c.Render(IndexView, data)
 }
@@ -232,12 +238,118 @@ func calculateElevation(points []float64, chunkSize int) (gain, loss float64) {
 	return gain, loss
 }
 
+func createMapImage(points []*geo.GeoPoint, filename string) error {
+	mapPoints, width, height := mapData(points)
+	img := image.NewRGBA(image.Rect(0, 0, width, height))
+	drawBoard(img, mapPoints)
+
+	flippedImg := imaging.FlipV(img.SubImage(img.Bounds()))
+
+	// Encode as PNG.
+	f, err := os.Create(filename)
+	if err != nil {
+		return err
+	}
+	err = png.Encode(f, flippedImg)
+	return err
+}
+
+type MapPoint struct {
+	x   int
+	y   int
+	geo *geo.GeoPoint
+}
+
+// https://en.wikipedia.org/wiki/Decimal_degrees
+// 10_000 for 11.1m accuracy (best for testing)
+// 100_000 for 1.1m accuracy
+// 1_000_000 for 1.1cm accuracy
+const CoordScale = 10_000
+
+func mapPoint(coord geo.Degrees) int {
+	return int(math.Round(CoordScale * float64(coord)))
+}
+
+func mapData(points []*geo.GeoPoint) ([]*MapPoint, int, int) {
+	var (
+		minLat  geo.Degrees = 360.0
+		minLong geo.Degrees = 360.0
+		maxLat  geo.Degrees = 0.0
+		maxLong geo.Degrees = 0.0
+
+		mapPoints []*MapPoint
+	)
+
+	for _, point := range points {
+		if point.Latitude < minLat {
+			minLat = point.Latitude
+		}
+		if point.Latitude > maxLat {
+			maxLat = point.Latitude
+		}
+
+		if point.Longitude < minLong {
+			minLong = point.Longitude
+		}
+		if point.Longitude > maxLong {
+			maxLong = point.Longitude
+		}
+	}
+
+	height := mapPoint(maxLat - minLat)
+	width := mapPoint(maxLong - minLong)
+
+	for _, point := range points {
+		geoPoint := point
+		mapPoint := &MapPoint{
+			x:   scaleMapPoint(point.Longitude, minLong, maxLong, width),
+			y:   scaleMapPoint(point.Latitude, minLat, maxLat, height),
+			geo: geoPoint,
+		}
+		mapPoints = append(mapPoints, mapPoint)
+	}
+
+	return mapPoints, width, height
+}
+
+func scaleMapPoint(x, minX, maxX geo.Degrees, toSize int) int {
+	normalized := normalize(float64(x), float64(minX), float64(maxX))
+	scaled := normalized * float64(toSize)
+	rounded := math.Round(scaled)
+	return int(rounded)
+
+}
+
+func normalize(x, minX, maxX float64) float64 {
+	return (x - minX) / (maxX - minX)
+}
+
+var Purple = color.RGBA{0x71, 0x03, 0x8A, 0xFF}
+var White = color.RGBA{0xd3, 0xd3, 0xd3, 0xFF}
+
+func drawBoard(img *image.RGBA, points []*MapPoint) {
+	size := img.Bounds().Size()
+	width := size.X
+	height := size.Y
+
+	// Set color for each pixel.
+	for x := 0; x < width; x++ {
+		for y := 0; y < height; y++ {
+			img.Set(x, y, White)
+		}
+	}
+
+	for _, point := range points {
+		img.Set(point.x, point.y, Purple)
+	}
+}
+
 func createGraph(points []*geo.GeoPoint) (path string, err error) {
 	path = "scatter.html"
 
 	page := components.NewPage()
 	page.AddCharts(
-		scatterBase(points),
+		scatterBase(points, 60),
 	)
 	f, err := os.Create(path)
 	if err != nil {
@@ -248,7 +360,7 @@ func createGraph(points []*geo.GeoPoint) (path string, err error) {
 	return path, nil
 }
 
-func scatterBase(points []*geo.GeoPoint) *charts.Scatter {
+func scatterBase(points []*geo.GeoPoint, chunkSize int) *charts.Scatter {
 	scatter := charts.NewScatter()
 	scatter.SetGlobalOptions(
 		charts.WithTitleOpts(opts.Title{Title: "basic scatter example"}),
@@ -258,18 +370,48 @@ func scatterBase(points []*geo.GeoPoint) *charts.Scatter {
 	xAxis := make([]geo.Degrees, numberOfPoints)
 	scatterItems := make([]opts.ScatterData, numberOfPoints)
 
-	for _, point := range points {
+	for idx, point := range points {
+		if idx%chunkSize != 0 {
+			continue
+		}
 		xAxis = append(xAxis, point.Longitude)
 		scatterItems = append(scatterItems, opts.ScatterData{
 			Value: point.Latitude,
 			// NOTE: can also use "arrow" but have to compute angel of rotation
 			Symbol:       "circle",
-			SymbolSize:   20,
-			SymbolRotate: 10,
+			SymbolSize:   5,
+			SymbolRotate: 2,
 		})
 	}
 
 	scatter.SetXAxis(xAxis).AddSeries("Points", scatterItems)
+
+	scatter.SetGlobalOptions(
+		charts.WithXAxisOpts(opts.XAxis{
+			SplitNumber: 20,
+		}),
+		charts.WithYAxisOpts(opts.YAxis{
+			Scale: true,
+		}),
+		charts.WithDataZoomOpts(opts.DataZoom{
+			Type:       "inside",
+			Start:      50,
+			End:        100,
+			XAxisIndex: []int{0},
+		}),
+		charts.WithDataZoomOpts(opts.DataZoom{
+			Type:       "slider",
+			Start:      50,
+			End:        100,
+			XAxisIndex: []int{0},
+		}),
+		charts.WithLegendOpts(opts.Legend{
+			Show: true,
+		}),
+		charts.WithTooltipOpts(opts.Tooltip{
+			Show: true,
+		}),
+	)
 
 	return scatter
 }
