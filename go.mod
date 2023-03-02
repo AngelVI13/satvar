@@ -4,10 +4,8 @@ go 1.18
 
 require (
 	github.com/disintegration/imaging v1.6.2
-	github.com/go-echarts/go-echarts/v2 v2.2.5
 	github.com/gofiber/fiber/v2 v2.42.0
 	github.com/gofiber/template v1.7.5
-	github.com/maragudk/gomponents v0.20.1
 	github.com/marcinwyszynski/geopoint v0.0.0-20140302213024-cf2a6f750c5b
 	github.com/sudhanshuraheja/go-garmin-gpx v1.0.2
 	github.com/sujit-baniya/flash v0.1.8

@@ -1,0 +1,119 @@
+package drawing
+
+import (
+	"image"
+	"image/color"
+	"image/png"
+	"math"
+	"os"
+
+	"github.com/AngelVI13/satvar/pkg/gps"
+	"github.com/disintegration/imaging"
+	gpx "github.com/sudhanshuraheja/go-garmin-gpx"
+)
+
+func CreateMapImage(track *gps.Track, filename string) error {
+	mapPoints, width, height := mapData(track.Points)
+	img := image.NewRGBA(image.Rect(0, 0, width, height))
+	drawBoard(img, mapPoints)
+
+	flippedImg := imaging.FlipV(img.SubImage(img.Bounds()))
+
+	// Encode as PNG.
+	f, err := os.Create(filename)
+	if err != nil {
+		return err
+	}
+	err = png.Encode(f, flippedImg)
+	return err
+}
+
+type MapPoint struct {
+	x   int
+	y   int
+	geo *gpx.TrackPoint
+}
+
+// https://en.wikipedia.org/wiki/Decimal_degrees
+// 10_000 for 11.1m accuracy (best for testing)
+// 100_000 for 1.1m accuracy
+// 1_000_000 for 1.1cm accuracy
+const CoordScale = 10_000
+
+func mapPoint(degrees float64) int {
+	return int(math.Round(CoordScale * degrees))
+}
+
+func mapData(points []*gpx.TrackPoint) ([]*MapPoint, int, int) {
+	var (
+		minLat  float64 = 360.0
+		minLong float64 = 360.0
+		maxLat  float64 = 0.0
+		maxLong float64 = 0.0
+
+		mapPoints []*MapPoint
+	)
+
+	for _, point := range points {
+		if float64(point.Latitude) < minLat {
+			minLat = float64(point.Latitude)
+		}
+		if float64(point.Latitude) > maxLat {
+			maxLat = float64(point.Latitude)
+		}
+
+		if float64(point.Longitude) < minLong {
+			minLong = float64(point.Longitude)
+		}
+		if float64(point.Longitude) > maxLong {
+			maxLong = float64(point.Longitude)
+		}
+	}
+
+	height := mapPoint(maxLat - minLat)
+	width := mapPoint(maxLong - minLong)
+
+	for _, point := range points {
+		geoPoint := point
+		mapPoint := &MapPoint{
+			x:   scaleMapPoint(float64(point.Longitude), minLong, maxLong, width),
+			y:   scaleMapPoint(float64(point.Latitude), minLat, maxLat, height),
+			geo: geoPoint,
+		}
+		mapPoints = append(mapPoints, mapPoint)
+	}
+
+	return mapPoints, width, height
+}
+
+func scaleMapPoint(x, minX, maxX float64, toSize int) int {
+	normalized := normalize(x, minX, maxX)
+	scaled := normalized * float64(toSize)
+	rounded := math.Round(scaled)
+	return int(rounded)
+
+}
+
+func normalize(x, minX, maxX float64) float64 {
+	return (x - minX) / (maxX - minX)
+}
+
+var Purple = color.RGBA{0x71, 0x03, 0x8A, 0xFF}
+var White = color.RGBA{0xd3, 0xd3, 0xd3, 0xFF}
+
+func drawBoard(img *image.RGBA, points []*MapPoint) {
+	size := img.Bounds().Size()
+	width := size.X
+	height := size.Y
+
+	// Set color for each pixel.
+	for x := 0; x < width; x++ {
+		for y := 0; y < height; y++ {
+			img.Set(x, y, White)
+		}
+	}
+
+	for _, point := range points {
+		img.Set(point.x, point.y, Purple)
+	}
+}
