@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"log"
 
-	geo "github.com/marcinwyszynski/geopoint"
 	gpx "github.com/sudhanshuraheja/go-garmin-gpx"
 )
 
@@ -30,26 +29,13 @@ func Data(track *gpx.Track) *Track {
 	t := &Track{}
 
 	for _, segment := range track.TrackSegments {
-		for _, point := range segment.TrackPoint {
-			t.ElevationPoints = append(t.ElevationPoints, point.Elevation)
-
-			gpsPoint := &point
-			t.Points = append(t.Points, gpsPoint)
-
-			if len(t.Points) <= 1 {
-				continue
-			}
-
-			currentPoint := geo.NewGeoPoint(geo.Degrees(point.Latitude), geo.Degrees(point.Longitude))
-			prev := t.Points[len(t.Points)-2]
-			prevPoint := geo.NewGeoPoint(geo.Degrees(prev.Latitude), geo.Degrees(prev.Longitude))
-			t.DistanceKms += float64(currentPoint.DistanceTo(prevPoint, geo.Haversine))
-		}
+		t.Points = append(t.Points, segment.TrackPoint...)
 	}
 
-	// TODO: determine chunkSize automatically based on number of elevation points
-	elevationGain, elevationLoss := calculateElevation(t.ElevationPoints, 60)
+	// TODO: determine chunkSize automatically based on number of gpx points
+	distanceKms, elevationGain, elevationLoss := calculateProperties(t.Points, 60)
 
+	t.DistanceKms = distanceKms
 	t.ElevationGain = elevationGain
 	t.ElevationLoss = elevationLoss
 

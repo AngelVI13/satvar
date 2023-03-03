@@ -2,12 +2,14 @@ package http
 
 import (
 	"fmt"
-	"log"
+	"time"
 
 	"github.com/AngelVI13/satvar/pkg/drawing"
 	"github.com/gofiber/fiber/v2"
 	"github.com/sujit-baniya/flash"
 )
+
+var myNumber int
 
 func (s *Server) HandleIndex(c *fiber.Ctx) error {
 	data := flash.Get(c)
@@ -26,7 +28,11 @@ func (s *Server) HandleIndex(c *fiber.Ctx) error {
 
 	// TODO: currently graph does not look good - fix it
 	// path, err := createGraph(GeoPoints)
-	path := "views/static/assets/map.png"
+	base := "views/static/"
+
+	timestamp := time.Now()
+	mapFile := fmt.Sprintf("assets/map_%d.png", timestamp.UnixMilli())
+	path := base + mapFile
 	err := drawing.CreateMapImage(s.Track(), path)
 	if err != nil {
 		flash.WithError(c, flashMessage(fmt.Sprintf(
@@ -34,8 +40,7 @@ func (s *Server) HandleIndex(c *fiber.Ctx) error {
 		return c.Render(IndexView, data)
 	}
 
-	data["Image"] = "assets/map.png"
-	log.Println(path)
+	data["Image"] = mapFile
 
 	return c.Render(IndexView, data)
 }

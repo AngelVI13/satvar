@@ -5,6 +5,7 @@ import (
 	"image/color"
 	"image/png"
 	"math"
+	"math/rand"
 	"os"
 
 	"github.com/AngelVI13/satvar/pkg/gps"
@@ -15,7 +16,7 @@ import (
 func CreateMapImage(track *gps.Track, filename string) error {
 	mapPoints, width, height := mapData(track.Points)
 	img := image.NewRGBA(image.Rect(0, 0, width, height))
-	drawBoard(img, mapPoints)
+	drawRoute(img, mapPoints)
 
 	flippedImg := imaging.FlipV(img.SubImage(img.Bounds()))
 
@@ -44,14 +45,14 @@ func mapPoint(degrees float64) int {
 	return int(math.Round(CoordScale * degrees))
 }
 
-func mapData(points []*gpx.TrackPoint) ([]*MapPoint, int, int) {
+func mapData(points []gpx.TrackPoint) ([]MapPoint, int, int) {
 	var (
 		minLat  float64 = 360.0
 		minLong float64 = 360.0
 		maxLat  float64 = 0.0
 		maxLong float64 = 0.0
 
-		mapPoints []*MapPoint
+		mapPoints []MapPoint
 	)
 
 	for _, point := range points {
@@ -74,8 +75,8 @@ func mapData(points []*gpx.TrackPoint) ([]*MapPoint, int, int) {
 	width := mapPoint(maxLong - minLong)
 
 	for _, point := range points {
-		geoPoint := point
-		mapPoint := &MapPoint{
+		geoPoint := &point
+		mapPoint := MapPoint{
 			x:   scaleMapPoint(float64(point.Longitude), minLong, maxLong, width),
 			y:   scaleMapPoint(float64(point.Latitude), minLat, maxLat, height),
 			geo: geoPoint,
@@ -99,12 +100,21 @@ func normalize(x, minX, maxX float64) float64 {
 }
 
 var Purple = color.RGBA{0x71, 0x03, 0x8A, 0xFF}
+var Black = color.RGBA{0x00, 0x00, 0x00, 0xFF}
+var Green = color.RGBA{0x00, 0xFF, 0x00, 0xFF}
+var Blue = color.RGBA{0x00, 0x00, 0xFF, 0xFF}
+var Red = color.RGBA{0xFF, 0x00, 0x00, 0xFF}
 var White = color.RGBA{0xd3, 0xd3, 0xd3, 0xFF}
 
-func drawBoard(img *image.RGBA, points []*MapPoint) {
+var Colors = [...]color.RGBA{Purple, Black, Green, Red, Blue}
+
+func drawRoute(img *image.RGBA, points []MapPoint) {
 	size := img.Bounds().Size()
 	width := size.X
 	height := size.Y
+
+	randomIndex := rand.Intn(len(Colors))
+	color := Colors[randomIndex]
 
 	// Set color for each pixel.
 	for x := 0; x < width; x++ {
@@ -114,6 +124,7 @@ func drawBoard(img *image.RGBA, points []*MapPoint) {
 	}
 
 	for _, point := range points {
-		img.Set(point.x, point.y, Purple)
+		img.Set(point.x, point.y, color)
+		// img.Set(point.x, point.y, Purple)
 	}
 }

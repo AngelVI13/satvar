@@ -50,8 +50,8 @@ func NewServer(viewsfs embed.FS) *Server {
 	s.App = app
 
 	// Middleware
-	app.Use("/css", fileServer(viewsfs, "views/static/css"))
-	app.Use("/assets", fileServer(viewsfs, "views/static/assets"))
+	app.Use("/css", embededFileServer(viewsfs, "views/static/css"))
+	app.Static("/", "./views/static")
 	app.Use(loggingHandler)
 
 	// index
@@ -82,7 +82,7 @@ func loggingHandler(c *fiber.Ctx) error {
 	return c.Next()
 }
 
-func fileServer(viewsfs embed.FS, path string) fiber.Handler {
+func embededFileServer(viewsfs embed.FS, path string) fiber.Handler {
 	return filesystem.New(filesystem.Config{
 		Root:       http.FS(viewsfs),
 		PathPrefix: path,

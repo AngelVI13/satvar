@@ -8,11 +8,10 @@ import (
 )
 
 type Track struct {
-	Points          []*gpx.TrackPoint
-	DistanceKms     float64
-	ElevationPoints []float64
-	ElevationGain   float64
-	ElevationLoss   float64
+	Points        []gpx.TrackPoint
+	DistanceKms   float64
+	ElevationGain float64
+	ElevationLoss float64
 }
 
 func (t Track) String() string {
