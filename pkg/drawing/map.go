@@ -37,18 +37,32 @@ func CreateMapImageSvg(track *gps.Track) []byte {
 }
 
 func drawRouteSvg(points []MapPoint, width, height int) []byte {
-	circleSize := 3
+	startEndCircleSize := 10
+	chunkSize := 5
 
 	var buf bytes.Buffer
 	s := svg.New(&buf)
 
+	// s.Startview(500, 500, 100, 0, 600, 500)
 	s.Start(width, height)
 	// TODO: add viewport instead of scaling
 	s.Scale(0.4)
 	for idx, point := range points {
-		// Do not draw all 80k + of points
-		if idx%10 == 0 {
-			s.Circle(point.x, height-point.y, circleSize, "fill:black")
+		// draw start circle
+		if idx == 0 {
+			s.Circle(point.x, height-point.y, startEndCircleSize, "fill:blue")
+			continue
+		}
+
+		// Draw a line between every `chunkSize` points
+		if idx%chunkSize == 0 {
+			prev := points[idx-chunkSize]
+			s.Line(prev.x, height-prev.y, point.x, height-point.y, "stroke-width:2; stroke:black")
+		}
+
+		// draw finish circle
+		if idx == len(points)-1 {
+			s.Circle(point.x, height-point.y, startEndCircleSize, "fill:red")
 		}
 	}
 	s.Gend()
