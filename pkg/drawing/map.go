@@ -45,7 +45,10 @@ func drawRouteSvg(points []MapPoint, width, height int) []byte {
 
 	// s.Startview(500, 500, 100, 0, 600, 500)
 	s.Start(width, height)
-	// TODO: add viewport instead of scaling
+	// TODO:
+	//  1. add viewport instead of scaling
+	//  2. draw user position
+	//  3. draw direction arrows
 	s.Scale(0.4)
 	for idx, point := range points {
 		// draw start circle
