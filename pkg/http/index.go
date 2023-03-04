@@ -1,8 +1,7 @@
 package http
 
 import (
-	"fmt"
-	"time"
+	"html/template"
 
 	"github.com/AngelVI13/satvar/pkg/drawing"
 	"github.com/gofiber/fiber/v2"
@@ -26,21 +25,8 @@ func (s *Server) HandleIndex(c *fiber.Ctx) error {
 		}
 	}
 
-	// TODO: currently graph does not look good - fix it
-	// path, err := createGraph(GeoPoints)
-	base := "views/static/"
-
-	timestamp := time.Now()
-	mapFile := fmt.Sprintf("assets/map_%d.png", timestamp.UnixMilli())
-	path := base + mapFile
-	err := drawing.CreateMapImage(s.Track(), path)
-	if err != nil {
-		flash.WithError(c, flashMessage(fmt.Sprintf(
-			"error creating gps graph: %v", err), LevelPrimary))
-		return c.Render(IndexView, data)
-	}
-
-	data["Image"] = mapFile
+	svgBytes := drawing.CreateMapImageSvg(s.Track())
+	data["SvgImage"] = template.HTML(svgBytes)
 
 	return c.Render(IndexView, data)
 }

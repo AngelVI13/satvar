@@ -1,6 +1,7 @@
 package drawing
 
 import (
+	"bytes"
 	"image"
 	"image/color"
 	"image/png"
@@ -9,6 +10,7 @@ import (
 	"os"
 
 	"github.com/AngelVI13/satvar/pkg/gps"
+	svg "github.com/ajstarks/svgo"
 	"github.com/disintegration/imaging"
 	gpx "github.com/sudhanshuraheja/go-garmin-gpx"
 )
@@ -27,6 +29,32 @@ func CreateMapImage(track *gps.Track, filename string) error {
 	}
 	err = png.Encode(f, flippedImg)
 	return err
+}
+
+func CreateMapImageSvg(track *gps.Track) []byte {
+	mapPoints, width, height := mapData(track.Points)
+	return drawRouteSvg(mapPoints, width, height)
+}
+
+func drawRouteSvg(points []MapPoint, width, height int) []byte {
+	circleSize := 3
+
+	var buf bytes.Buffer
+	s := svg.New(&buf)
+
+	s.Start(width, height)
+	// TODO: add viewport instead of scaling
+	s.Scale(0.4)
+	for idx, point := range points {
+		// Do not draw all 80k + of points
+		if idx%10 == 0 {
+			s.Circle(point.x, height-point.y, circleSize, "fill:black")
+		}
+	}
+	s.Gend()
+	s.End()
+
+	return buf.Bytes()
 }
 
 type MapPoint struct {

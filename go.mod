@@ -3,6 +3,7 @@ module github.com/AngelVI13/satvar
 go 1.18
 
 require (
+	github.com/ajstarks/svgo v0.0.0-20211024235047-1546f124cd8b
 	github.com/disintegration/imaging v1.6.2
 	github.com/gofiber/fiber/v2 v2.42.0
 	github.com/gofiber/template v1.7.5
