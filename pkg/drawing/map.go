@@ -79,9 +79,26 @@ func drawRouteSvg(points []MapPoint, width, height int) []byte {
 
 	for i := chunkSize * 10; i < len(xPointsToDraw); i += chunkSize * 10 {
 		imageSize := startEndCircleSize * 2
+
 		imageX := xPointsToDraw[i]
 		imageY := yPointsToDraw[i]
-		s.Image(imageX, imageY, imageSize, imageSize, "assets/arrow_s.png")
+
+		prevX := xPointsToDraw[i-chunkSize]
+		prevY := yPointsToDraw[i-chunkSize]
+
+		imageAngle := angle(prevX, prevY, imageX, imageY)
+
+		// TODO: fix rotation bug
+		// The rotation seems to work for 1-2 elements but as soon
+		// as i increase to 3 -> the whole image gets broken
+		if i < 2*(chunkSize*10) {
+			s.Rotate(imageAngle)
+		}
+		s.Image(imageX-imageSize, imageY-imageSize/2, imageSize, imageSize, "assets/arrow_s.png")
+
+		if i < 2*(chunkSize*10) {
+			s.Gend()
+		}
 		// s.Circle(xPointsToDraw[i], yPointsToDraw[i], startEndCircleSize, "fill:green")
 	}
 	s.Circle(endPointX, endPointY, startEndCircleSize, "fill:red")
@@ -90,6 +107,24 @@ func drawRouteSvg(points []MapPoint, width, height int) []byte {
 	s.End()
 
 	return buf.Bytes()
+}
+
+// angle Find the angle between 2 points (considering top-left as 0, 0)
+// Taken from here: https://stackoverflow.com/a/27481611
+func angle(x1, y1, x2, y2 int) float64 {
+	// NOTE: Remember that most math has the Y axis as positive above the X.
+	// However, for screens we have Y as positive below. For this reason,
+	// the Y values are inverted to get the expected results.
+	deltaY := float64(y1 - y2)
+	deltaX := float64(x2 - x1)
+
+	resultRadians := math.Atan2(deltaY, deltaX)
+	resultDegrees := resultRadians * (180 / math.Pi)
+
+	if resultDegrees < 0 {
+		return 360 + resultDegrees
+	}
+	return resultDegrees
 }
 
 type MapPoint struct {
