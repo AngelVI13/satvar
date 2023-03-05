@@ -40,6 +40,20 @@ func drawRouteSvg(points []MapPoint, width, height int) []byte {
 	startEndCircleSize := 10
 	chunkSize := 5
 
+	xPointsToDraw := make([]int, 0, len(points)/chunkSize)
+	yPointsToDraw := make([]int, 0, len(points)/chunkSize)
+
+	for idx := range points {
+		if idx%chunkSize == 0 {
+			xPointsToDraw = append(xPointsToDraw, points[idx].x)
+			yPointsToDraw = append(yPointsToDraw, height-points[idx].y)
+		}
+	}
+
+	if len(xPointsToDraw) < 1 {
+		return nil
+	}
+
 	var buf bytes.Buffer
 	s := svg.New(&buf)
 
@@ -50,24 +64,20 @@ func drawRouteSvg(points []MapPoint, width, height int) []byte {
 	//  2. draw user position
 	//  3. draw direction arrows
 	s.Scale(0.4)
-	for idx, point := range points {
-		// draw start circle
-		if idx == 0 {
-			s.Circle(point.x, height-point.y, startEndCircleSize, "fill:blue")
-			continue
-		}
 
-		// Draw a line between every `chunkSize` points
-		if idx%chunkSize == 0 {
-			prev := points[idx-chunkSize]
-			s.Line(prev.x, height-prev.y, point.x, height-point.y, "stroke-width:2; stroke:black")
-		}
+	// draw start circle
+	startPointX := xPointsToDraw[0]
+	startPointY := yPointsToDraw[0]
+	s.Circle(startPointX, startPointY, startEndCircleSize, "fill:blue")
 
-		// draw finish circle
-		if idx == len(points)-1 {
-			s.Circle(point.x, height-point.y, startEndCircleSize, "fill:red")
-		}
-	}
+	// Draw a polyline between every `chunkSize` points
+	s.Polyline(xPointsToDraw, yPointsToDraw, "fill:none;stroke-width:2; stroke:black")
+
+	// draw finish circle
+	endPointX := xPointsToDraw[len(xPointsToDraw)-1]
+	endPointY := yPointsToDraw[len(yPointsToDraw)-1]
+	s.Circle(endPointX, endPointY, startEndCircleSize, "fill:red")
+
 	s.Gend()
 	s.End()
 
