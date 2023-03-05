@@ -76,6 +76,14 @@ func drawRouteSvg(points []MapPoint, width, height int) []byte {
 	// draw finish circle
 	endPointX := xPointsToDraw[len(xPointsToDraw)-1]
 	endPointY := yPointsToDraw[len(yPointsToDraw)-1]
+
+	for i := chunkSize * 10; i < len(xPointsToDraw); i += chunkSize * 10 {
+		imageSize := startEndCircleSize * 2
+		imageX := xPointsToDraw[i]
+		imageY := yPointsToDraw[i]
+		s.Image(imageX, imageY, imageSize, imageSize, "assets/arrow_s.png")
+		// s.Circle(xPointsToDraw[i], yPointsToDraw[i], startEndCircleSize, "fill:green")
+	}
 	s.Circle(endPointX, endPointY, startEndCircleSize, "fill:red")
 
 	s.Gend()
