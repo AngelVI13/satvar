@@ -130,7 +130,7 @@ func drawRouteSvg(
 	// draw user
 	if userLoc != nil {
 		log.Println(userLoc.x, userLoc.y)
-		s.Circle(userLoc.x, userLoc.y, startEndCircleSize, "fill:purple")
+		s.Circle(userLoc.x, height-userLoc.y, startEndCircleSize, "fill:green")
 	}
 
 	s.Gend()
