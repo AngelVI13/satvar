@@ -2,6 +2,7 @@ package drawing
 
 import (
 	"bytes"
+	"fmt"
 	"image"
 	"image/color"
 	"image/png"
@@ -62,7 +63,6 @@ func drawRouteSvg(points []MapPoint, width, height int) []byte {
 	// TODO:
 	//  1. add viewport instead of scaling
 	//  2. draw user position
-	//  3. draw direction arrows
 	s.Scale(0.4)
 
 	// draw start circle
@@ -71,13 +71,20 @@ func drawRouteSvg(points []MapPoint, width, height int) []byte {
 	s.Circle(startPointX, startPointY, startEndCircleSize, "fill:blue")
 
 	// Draw a polyline between every `chunkSize` points
-	s.Polyline(xPointsToDraw, yPointsToDraw, "fill:none;stroke-width:2; stroke:black")
+	s.Polyline(
+		xPointsToDraw,
+		yPointsToDraw,
+		"fill:none;stroke-width:2; stroke:black",
+	)
 
 	// draw finish circle
 	endPointX := xPointsToDraw[len(xPointsToDraw)-1]
 	endPointY := yPointsToDraw[len(yPointsToDraw)-1]
 
-	for i := chunkSize * 10; i < len(xPointsToDraw); i += chunkSize * 10 {
+	distanceBetweenArrows := chunkSize * 20
+
+	// draw direction arrows
+	for i := distanceBetweenArrows; i < len(xPointsToDraw); i += distanceBetweenArrows {
 		imageSize := startEndCircleSize * 2
 
 		imageX := xPointsToDraw[i]
@@ -88,18 +95,23 @@ func drawRouteSvg(points []MapPoint, width, height int) []byte {
 
 		imageAngle := angle(prevX, prevY, imageX, imageY)
 
-		// TODO: fix rotation bug
-		// The rotation seems to work for 1-2 elements but as soon
-		// as i increase to 3 -> the whole image gets broken
-		if i < 2*(chunkSize*10) {
-			s.Rotate(imageAngle)
-		}
-		s.Image(imageX-imageSize, imageY-imageSize/2, imageSize, imageSize, "assets/arrow_s.png")
+		transform := fmt.Sprintf(
+			"transform=\"rotate(%f, %d, %d)\"",
+			-imageAngle,
+			imageX,
+			imageY,
+		)
 
-		if i < 2*(chunkSize*10) {
-			s.Gend()
-		}
-		// s.Circle(xPointsToDraw[i], yPointsToDraw[i], startEndCircleSize, "fill:green")
+		emptyclose := "/>\n"
+		imageSvg := fmt.Sprintf(
+			`<image %s %s %s %s`,
+			dim(imageX-imageSize, imageY-imageSize/2, imageSize, imageSize),
+			href("assets/arrow_s.png"),
+			transform,
+			emptyclose,
+		)
+
+		buf.WriteString(imageSvg)
 	}
 	s.Circle(endPointX, endPointY, startEndCircleSize, "fill:red")
 
@@ -107,6 +119,15 @@ func drawRouteSvg(points []MapPoint, width, height int) []byte {
 	s.End()
 
 	return buf.Bytes()
+}
+
+// SVG funcs
+// href returns the href name and attribute
+func href(s string) string { return fmt.Sprintf(`xlink:href="%s"`, s) }
+
+// dim returns the dimension string (x, y coordinates and width, height)
+func dim(x int, y int, w int, h int) string {
+	return fmt.Sprintf(`x="%d" y="%d" width="%d" height="%d"`, x, y, w, h)
 }
 
 // angle Find the angle between 2 points (considering top-left as 0, 0)
@@ -175,7 +196,12 @@ func mapData(points []gpx.TrackPoint) ([]MapPoint, int, int) {
 	for _, point := range points {
 		geoPoint := &point
 		mapPoint := MapPoint{
-			x:   scaleMapPoint(float64(point.Longitude), minLong, maxLong, width),
+			x: scaleMapPoint(
+				float64(point.Longitude),
+				minLong,
+				maxLong,
+				width,
+			),
 			y:   scaleMapPoint(float64(point.Latitude), minLat, maxLat, height),
 			geo: geoPoint,
 		}
