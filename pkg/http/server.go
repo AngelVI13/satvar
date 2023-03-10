@@ -25,7 +25,8 @@ var (
 
 type Server struct {
 	*fiber.App
-	track *gps.Track
+	track    *gps.Track
+	location *gps.Location
 }
 
 // Generate png image from gps points & current location.

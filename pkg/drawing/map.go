@@ -6,6 +6,7 @@ import (
 	"image"
 	"image/color"
 	"image/png"
+	"log"
 	"math"
 	"math/rand"
 	"os"
@@ -16,8 +17,12 @@ import (
 	gpx "github.com/sudhanshuraheja/go-garmin-gpx"
 )
 
-func CreateMapImage(track *gps.Track, filename string) error {
-	mapPoints, width, height := mapData(track.Points)
+func CreateMapImage(
+	track *gps.Track,
+	userLocation *gps.Location,
+	filename string,
+) error {
+	mapPoints, _, width, height := mapData(track.Points, userLocation)
 	img := image.NewRGBA(image.Rect(0, 0, width, height))
 	drawRoute(img, mapPoints)
 
@@ -32,12 +37,17 @@ func CreateMapImage(track *gps.Track, filename string) error {
 	return err
 }
 
-func CreateMapImageSvg(track *gps.Track) []byte {
-	mapPoints, width, height := mapData(track.Points)
-	return drawRouteSvg(mapPoints, width, height)
+func CreateMapImageSvg(track *gps.Track, userLocation *gps.Location) []byte {
+	// TODO: handle userLocation
+	mapPoints, user, width, height := mapData(track.Points, userLocation)
+	return drawRouteSvg(mapPoints, user, width, height)
 }
 
-func drawRouteSvg(points []MapPoint, width, height int) []byte {
+func drawRouteSvg(
+	points []MapPoint,
+	userLoc *MapPoint,
+	width, height int,
+) []byte {
 	startEndCircleSize := 10
 	chunkSize := 5
 
@@ -113,7 +123,15 @@ func drawRouteSvg(points []MapPoint, width, height int) []byte {
 
 		buf.WriteString(imageSvg)
 	}
+
+	// draw finish
 	s.Circle(endPointX, endPointY, startEndCircleSize, "fill:red")
+
+	// draw user
+	if userLoc != nil {
+		log.Println(userLoc.x, userLoc.y)
+		s.Circle(userLoc.x, userLoc.y, startEndCircleSize, "fill:purple")
+	}
 
 	s.Gend()
 	s.End()
@@ -164,14 +182,15 @@ func mapPoint(degrees float64) int {
 	return int(math.Round(CoordScale * degrees))
 }
 
-func mapData(points []gpx.TrackPoint) ([]MapPoint, int, int) {
+func mapData(
+	points []gpx.TrackPoint,
+	userLoc *gps.Location,
+) (mapPoints []MapPoint, userLocation *MapPoint, width, height int) {
 	var (
 		minLat  float64 = 360.0
 		minLong float64 = 360.0
 		maxLat  float64 = 0.0
 		maxLong float64 = 0.0
-
-		mapPoints []MapPoint
 	)
 
 	for _, point := range points {
@@ -190,8 +209,10 @@ func mapData(points []gpx.TrackPoint) ([]MapPoint, int, int) {
 		}
 	}
 
-	height := mapPoint(maxLat - minLat)
-	width := mapPoint(maxLong - minLong)
+	height = mapPoint(maxLat - minLat)
+	width = mapPoint(maxLong - minLong)
+
+	// TODO: return heigh and width scaling functions and do that during drawing
 
 	for _, point := range points {
 		geoPoint := &point
@@ -208,7 +229,15 @@ func mapData(points []gpx.TrackPoint) ([]MapPoint, int, int) {
 		mapPoints = append(mapPoints, mapPoint)
 	}
 
-	return mapPoints, width, height
+	if userLoc != nil {
+		userLocation = &MapPoint{
+			x:   scaleMapPoint(userLoc.Longitude, minLong, maxLong, width),
+			y:   scaleMapPoint(userLoc.Latitude, minLat, maxLat, height),
+			geo: nil,
+		}
+	}
+
+	return mapPoints, userLocation, width, height
 }
 
 func scaleMapPoint(x, minX, maxX float64, toSize int) int {

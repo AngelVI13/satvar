@@ -23,3 +23,14 @@ func (s *Server) Track() *gps.Track {
 func (s *Server) TrackLoaded() bool {
 	return s.track != nil
 }
+
+func (s *Server) Location() *gps.Location {
+	return s.location
+}
+
+func (s *Server) SetLocation(long, lat float64) {
+	s.location = &gps.Location{
+		Longitude: long,
+		Latitude:  lat,
+	}
+}

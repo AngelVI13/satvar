@@ -25,7 +25,7 @@ func (s *Server) HandleIndex(c *fiber.Ctx) error {
 		}
 	}
 
-	svgBytes := drawing.CreateMapImageSvg(s.Track())
+	svgBytes := drawing.CreateMapImageSvg(s.Track(), s.Location())
 	data["SvgImage"] = template.HTML(svgBytes)
 
 	return c.Render(IndexView, data)
