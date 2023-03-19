@@ -42,6 +42,25 @@ func CreateMapImageSvg(track *gps.Track, userLocation *gps.Location) []byte {
 	return drawRouteSvg(mapPoints, user, width, height)
 }
 
+func calculateViewBox(height int, userLoc *MapPoint) string {
+	// TODO: get current screensize
+	paddingX := 600
+	paddingY := 600
+
+	var (
+		startX int
+		startY int
+	)
+
+	startX = userLoc.x - paddingX
+	startY = height - userLoc.y - paddingY
+
+	return fmt.Sprintf("viewBox=\"%d %d %d %d\"", startX, startY, 2*paddingX, 2*paddingY)
+
+	// TODO: use this to show the map in full-screen
+	// return fmt.Sprintf("viewBox=\"0 0 %d %d\"", width, height)
+}
+
 func drawRouteSvg(
 	points []MapPoint,
 	userLoc *MapPoint,
@@ -67,7 +86,7 @@ func drawRouteSvg(
 	var buf bytes.Buffer
 	s := svg.New(&buf)
 
-	viewBox := fmt.Sprintf("viewBox=\"0 0 %d %d\"", width, height)
+	viewBox := calculateViewBox(height, userLoc)
 	preserveAspectRatio := "preserveAspectRatio=\"xMinYMin meet\""
 	s.Startpercent(100, 100, viewBox, preserveAspectRatio)
 	// TODO:
