@@ -89,8 +89,6 @@ func drawRouteSvg(
 	viewBox := calculateViewBox(height, userLoc)
 	preserveAspectRatio := "preserveAspectRatio=\"xMinYMin meet\""
 	s.Startpercent(100, 100, viewBox, preserveAspectRatio)
-	// TODO:
-	//  1. add viewport instead of scaling
 
 	// draw start circle
 	startPointX := xPointsToDraw[0]
