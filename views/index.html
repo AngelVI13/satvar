@@ -1,8 +1,4 @@
-<div class="container-fluid">
-    <div class="box">
-        {{ .SvgImage }}
-    </div>
-</div>
+{{ .SvgImage }}
 
 <script>
 function initialize() {
@@ -25,13 +21,6 @@ function initialize() {
 }
 
 function handleGeolocationData(latitude, longitude){
-    /*
-    $.ajax({
-        type: "POST",
-        url: "/location/"+latitude+"/"+longitude,
-        data: "",
-    });
-    */
     window.location = "/?lat="+latitude+"&long="+longitude;
 }
 

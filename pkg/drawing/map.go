@@ -67,12 +67,11 @@ func drawRouteSvg(
 	var buf bytes.Buffer
 	s := svg.New(&buf)
 
-	// s.Startview(500, 500, 100, 0, 600, 500)
-	s.Start(width, height)
+	viewBox := fmt.Sprintf("viewBox=\"0 0 %d %d\"", width, height)
+	preserveAspectRatio := "preserveAspectRatio=\"xMinYMin meet\""
+	s.Startpercent(100, 100, viewBox, preserveAspectRatio)
 	// TODO:
 	//  1. add viewport instead of scaling
-	//  2. draw user position
-	s.Scale(0.4)
 
 	// draw start circle
 	startPointX := xPointsToDraw[0]

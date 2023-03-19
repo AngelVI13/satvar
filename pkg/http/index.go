@@ -59,14 +59,13 @@ func (s *Server) processLocation(longitude, latitude string) {
 		track := s.Track()
 		point := track.Points[currentTrackIdx]
 
-		currentTrackIdx += 300
+		currentTrackIdx += 500
 		if currentTrackIdx >= len(track.Points) {
 			currentTrackIdx = 0
 		}
 
 		longitudeFloat = float64(point.Longitude)
 		latitudeFloat = float64(point.Latitude)
-		log.Printf("FLoc: %f, %f", longitudeFloat, latitudeFloat)
 	} else {
 		var err error
 		longitudeFloat, err = strconv.ParseFloat(longitude, 64)
@@ -86,7 +85,6 @@ func (s *Server) processLocation(longitude, latitude string) {
 				err,
 			)
 		}
-		log.Printf("RLoc %f %f", longitudeFloat, latitudeFloat)
 	}
 
 	s.SetLocation(longitudeFloat, latitudeFloat)
