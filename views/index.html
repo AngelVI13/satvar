@@ -15,7 +15,7 @@ function initialize() {
             }, function() {
                 handleNoGeolocation(true);
             });
-        }, 5000);
+        }, 1000);
         // NOTE: To stop the loop we can use
         // clearInterval(intervalId)
     } else {
@@ -25,12 +25,14 @@ function initialize() {
 }
 
 function handleGeolocationData(latitude, longitude){
+    /*
     $.ajax({
         type: "POST",
         url: "/location/"+latitude+"/"+longitude,
         data: "",
     });
-    window.location = "/";
+    */
+    window.location = "/?lat="+latitude+"&long="+longitude;
 }
 
 // TODO: I don't think this func actually does anything

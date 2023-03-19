@@ -6,7 +6,6 @@ import (
 	"image"
 	"image/color"
 	"image/png"
-	"log"
 	"math"
 	"math/rand"
 	"os"
@@ -129,7 +128,6 @@ func drawRouteSvg(
 
 	// draw user
 	if userLoc != nil {
-		log.Println(userLoc.x, userLoc.y)
 		s.Circle(userLoc.x, height-userLoc.y, startEndCircleSize, "fill:green")
 	}
 
@@ -245,19 +243,20 @@ func scaleMapPoint(x, minX, maxX float64, toSize int) int {
 	scaled := normalized * float64(toSize)
 	rounded := math.Round(scaled)
 	return int(rounded)
-
 }
 
 func normalize(x, minX, maxX float64) float64 {
 	return (x - minX) / (maxX - minX)
 }
 
-var Purple = color.RGBA{0x71, 0x03, 0x8A, 0xFF}
-var Black = color.RGBA{0x00, 0x00, 0x00, 0xFF}
-var Green = color.RGBA{0x00, 0xFF, 0x00, 0xFF}
-var Blue = color.RGBA{0x00, 0x00, 0xFF, 0xFF}
-var Red = color.RGBA{0xFF, 0x00, 0x00, 0xFF}
-var White = color.RGBA{0xd3, 0xd3, 0xd3, 0xFF}
+var (
+	Purple = color.RGBA{0x71, 0x03, 0x8A, 0xFF}
+	Black  = color.RGBA{0x00, 0x00, 0x00, 0xFF}
+	Green  = color.RGBA{0x00, 0xFF, 0x00, 0xFF}
+	Blue   = color.RGBA{0x00, 0x00, 0xFF, 0xFF}
+	Red    = color.RGBA{0xFF, 0x00, 0x00, 0xFF}
+	White  = color.RGBA{0xd3, 0xd3, 0xd3, 0xFF}
+)
 
 var Colors = [...]color.RGBA{Purple, Black, Green, Red, Blue}
 

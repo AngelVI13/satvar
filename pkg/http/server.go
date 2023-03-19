@@ -19,22 +19,23 @@ const (
 	LocationUrl    = "/location"
 )
 
-var (
-	LocationUrlFull = fmt.Sprintf("%s/:lat/:long", LocationUrl)
-)
+var LocationUrlFull = fmt.Sprintf("%s/:lat/:long", LocationUrl)
 
 type Server struct {
 	*fiber.App
 	track    *gps.Track
-	location *gps.Location
+	location *gps.Location // TODO: this just works for 1 user
+	debug    bool
 }
 
 // Generate png image from gps points & current location.
 // Set the generated image as an html element to be displayed.
 // In JS obtain location once per second and call backend which
 // regenerates image and refreshes display
-func NewServer(viewsfs embed.FS) *Server {
-	s := Server{}
+func NewServer(viewsfs embed.FS, debug bool) *Server {
+	s := Server{
+		debug: debug,
+	}
 
 	engine := html.NewFileSystem(http.FS(viewsfs), ".html")
 
@@ -61,11 +62,13 @@ func NewServer(viewsfs embed.FS) *Server {
 		s.HandleIndex,
 	)
 
-	// location
-	app.Post(
-		LocationUrlFull,
-		s.HandleLocation,
-	)
+	/*
+		// location
+		app.Post(
+			LocationUrlFull,
+			s.HandleLocation,
+		)
+	*/
 
 	return &s
 }

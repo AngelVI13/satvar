@@ -3,6 +3,7 @@ package main
 import (
 	"embed"
 	"log"
+	"os"
 
 	"github.com/AngelVI13/satvar/pkg/http"
 )
@@ -11,7 +12,8 @@ import (
 var viewsfs embed.FS
 
 func main() {
-	server := http.NewServer(viewsfs)
+	_, debug := os.LookupEnv("DEBUG")
+	server := http.NewServer(viewsfs, debug)
 
 	log.Fatal(server.Listen(":5000"))
 }
