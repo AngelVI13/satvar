@@ -17,6 +17,10 @@ func (s *Server) HandleIndex(c *fiber.Ctx) error {
 	latitude := c.Query("lat")
 	s.processLocation(longitude, latitude)
 
+	screenWidth := c.Query("sWidth")
+	screenHeight := c.Query("sHeight")
+	s.processScreenSize(screenWidth, screenHeight)
+
 	data := flash.Get(c)
 	data["Title"] = "Satvar"
 
@@ -88,4 +92,8 @@ func (s *Server) processLocation(longitude, latitude string) {
 	}
 
 	s.SetLocation(longitudeFloat, latitudeFloat)
+}
+
+func (s *Server) processScreenSize(width, height string) {
+	log.Println(width, height)
 }

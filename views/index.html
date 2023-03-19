@@ -21,7 +21,8 @@ function initialize() {
 }
 
 function handleGeolocationData(latitude, longitude){
-    window.location = "/?lat="+latitude+"&long="+longitude;
+    var screenQuery = "&sWidth="+screen.width+"&sHeight="+screen.height;
+    window.location = "/?lat="+latitude+"&long="+longitude+screenQuery;
 }
 
 // TODO: I don't think this func actually does anything
