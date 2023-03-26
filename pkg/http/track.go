@@ -3,6 +3,7 @@ package http
 import (
 	"fmt"
 
+	"github.com/AngelVI13/satvar/pkg/drawing"
 	"github.com/AngelVI13/satvar/pkg/gps"
 )
 
@@ -13,6 +14,7 @@ func (s *Server) LoadTrack(filename string) error {
 	}
 
 	s.track = track
+	s.trackFile = filename
 	return nil
 }
 
@@ -20,8 +22,8 @@ func (s *Server) Track() *gps.Track {
 	return s.track
 }
 
-func (s *Server) TrackLoaded() bool {
-	return s.track != nil
+func (s *Server) TrackLoaded(filename string) bool {
+	return s.track != nil && s.trackFile == filename
 }
 
 func (s *Server) Location() *gps.Location {
@@ -33,4 +35,18 @@ func (s *Server) SetLocation(long, lat float64) {
 		Longitude: long,
 		Latitude:  lat,
 	}
+}
+
+func (s *Server) GenerateMap(filename string) ([]byte, error) {
+	if !s.TrackLoaded(filename) {
+		// TODO: visualize gps coordinates on map:
+		// https://www.here.com/learn/blog/reverse-geocoding-a-location-using-golang
+		err := s.LoadTrack(filename)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	svgBytes := drawing.CreateMapImageSvg(s.Track(), s.Location())
+	return svgBytes, nil
 }

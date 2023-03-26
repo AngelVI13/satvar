@@ -1,19 +1,34 @@
 {{ .SvgImage }}
 
 <script>
+
+function handleLocation(position) {
+    // capture latitude and longtitude... pass back to backend
+}
+
+const locationOptions = {
+  enableHighAccuracy: true,
+  timeout: 1500,
+  maximumAge: 0,
+};
+
+function locationSuccess(position) {
+    handleGeolocationData(position.coords.latitude,position.coords.longitude);
+}
+
+function locationError(err) {
+  console.warn(`ERROR(${err.code}): ${err.message}`);
+}
+
+function handleLocation() {
+    navigator.geolocation.getCurrentPosition(locationSuccess, locationError, locationOptions);
+    setTimeout(handleLocation, 2000)
+}
+
 function initialize() {
     // Try HTML5 geolocation
     if(navigator.geolocation) {
-        var intervalId = window.setInterval(function(){
-            navigator.geolocation.getCurrentPosition(function(position) {
-                // capture latitude and longtitude... pass back to backend
-                handleGeolocationData(position.coords.latitude,position.coords.longitude);
-            }, function() {
-                handleNoGeolocation(true);
-            });
-        }, 1000);
-        // NOTE: To stop the loop we can use
-        // clearInterval(intervalId)
+        handleLocation()
     } else {
         // Browser doesn't support Geolocation
         handleNoGeolocation(false);
@@ -21,28 +36,24 @@ function initialize() {
 }
 
 function handleGeolocationData(latitude, longitude){
-    var screenQuery = "&sWidth="+screen.width+"&sHeight="+screen.height;
-    var fullQuery = "/?lat="+latitude+"&long="+longitude+screenQuery;
-    // window.location = fullQuery;
-    // TODO: create endpoint that just recalculates and returns SVG 
-    //   so that i dont have to do some strings processing here
+    const screenQuery = "/"+screen.width+"/"+screen.height;
+    const fullQuery = "/map/"+latitude+"/"+longitude+screenQuery;
     $.ajax({
         url: fullQuery, 
         type: "get",
-        success: function(data, status){
-            if (status === "success") {
-                const svgHtml = data.substring(
-                    data.indexOf("<svg"), 
-                    data.indexOf("</svg>") + 6
-                );
-                console.log(svgHtml);
-                const currentSvg = document.querySelector("svg");
-                const newSvg = document.createElement("svg");
-                newSvg.innerHTML = svgHtml;
-                currentSvg.parentNode.replaceChild(newSvg, currentSvg);
-            }
-        },
+        success: handleNewMap,
     });
+}
+
+function handleNewMap(data, status) {
+    if (status !== "success") {
+        return;
+    }
+
+    const currentSvg = document.querySelector("svg");
+    const newSvg = document.createElement("svg");
+    newSvg.innerHTML = data;
+    currentSvg.parentNode.replaceChild(newSvg, currentSvg);
 }
 
 // TODO: I don't think this func actually does anything

@@ -5,7 +5,6 @@ import (
 	"log"
 	"strconv"
 
-	"github.com/AngelVI13/satvar/pkg/drawing"
 	"github.com/gofiber/fiber/v2"
 	"github.com/sujit-baniya/flash"
 )
@@ -24,19 +23,13 @@ func (s *Server) HandleIndex(c *fiber.Ctx) error {
 	data := flash.Get(c)
 	data["Title"] = "Satvar"
 
-	if !s.TrackLoaded() {
-		// TODO: visualize gps coordinates on map:
-		// https://www.here.com/learn/blog/reverse-geocoding-a-location-using-golang
-		filename := "Vilnius100km.gpx"
-		// filename := "home_run.gpx"
-		err := s.LoadTrack(filename)
-		if err != nil {
-			flash.WithError(c, flashMessage(err.Error(), LevelDanger))
-			return c.Render(IndexView, data)
-		}
+	filename := "Vilnius100km.gpx"
+	svgBytes, err := s.GenerateMap(filename)
+	if err != nil {
+		flash.WithError(c, flashMessage(err.Error(), LevelDanger))
+		return c.Render(IndexView, data)
 	}
 
-	svgBytes := drawing.CreateMapImageSvg(s.Track(), s.Location())
 	data["SvgImage"] = template.HTML(svgBytes)
 
 	return c.Render(IndexView, data)
@@ -56,9 +49,10 @@ func (s *Server) processLocation(longitude, latitude string) {
 	)
 
 	if s.debug {
+		filename := "Vilnius100km.gpx"
 		// This imitates a person going through the course route
-		if !s.TrackLoaded() {
-			s.LoadTrack("Vilnius100km.gpx")
+		if !s.TrackLoaded(filename) {
+			s.LoadTrack(filename)
 		}
 
 		track := s.Track()
@@ -96,5 +90,4 @@ func (s *Server) processLocation(longitude, latitude string) {
 }
 
 func (s *Server) processScreenSize(width, height string) {
-	log.Println(width, height)
 }

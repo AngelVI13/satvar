@@ -16,16 +16,17 @@ const (
 	IndexView      = "views/index"
 	MainLayoutView = "views/layouts/main"
 	IndexUrl       = "/"
-	LocationUrl    = "/location"
+	MapUrl         = "/map"
 )
 
-var LocationUrlFull = fmt.Sprintf("%s/:lat/:long", LocationUrl)
+var MapUrlFull = fmt.Sprintf("%s/:lat/:long/:sWidth/:sHeight", MapUrl)
 
 type Server struct {
 	*fiber.App
-	track    *gps.Track
-	location *gps.Location // TODO: this just works for 1 user
-	debug    bool
+	track     *gps.Track
+	trackFile string
+	location  *gps.Location // TODO: this just works for 1 user
+	debug     bool
 }
 
 // Generate png image from gps points & current location.
@@ -62,13 +63,10 @@ func NewServer(viewsfs embed.FS, debug bool) *Server {
 		s.HandleIndex,
 	)
 
-	/*
-		// location
-		app.Post(
-			LocationUrlFull,
-			s.HandleLocation,
-		)
-	*/
+	app.Get(
+		MapUrlFull,
+		s.HandleMap,
+	)
 
 	return &s
 }
