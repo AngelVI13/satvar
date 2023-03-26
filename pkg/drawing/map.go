@@ -43,7 +43,7 @@ func CreateMapImageSvg(track *gps.Track, userLocation *gps.Location) []byte {
 }
 
 func calculateViewBox(width, height int, userLoc *MapPoint, followUser bool) string {
-	if !followUser {
+	if !followUser || userLoc == nil {
 		// TODO: use this to show the map in full-screen
 		return fmt.Sprintf("viewBox=\"0 0 %d %d\"", width, height)
 	}

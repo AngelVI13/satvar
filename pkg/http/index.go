@@ -28,6 +28,7 @@ func (s *Server) HandleIndex(c *fiber.Ctx) error {
 		// TODO: visualize gps coordinates on map:
 		// https://www.here.com/learn/blog/reverse-geocoding-a-location-using-golang
 		filename := "Vilnius100km.gpx"
+		// filename := "home_run.gpx"
 		err := s.LoadTrack(filename)
 		if err != nil {
 			flash.WithError(c, flashMessage(err.Error(), LevelDanger))
@@ -45,7 +46,7 @@ func (s *Server) HandleIndex(c *fiber.Ctx) error {
 var currentTrackIdx int
 
 func (s *Server) processLocation(longitude, latitude string) {
-	if longitude == "" || latitude == "" {
+	if (longitude == "" || latitude == "") && !s.debug {
 		return
 	}
 

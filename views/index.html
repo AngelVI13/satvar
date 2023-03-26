@@ -22,7 +22,27 @@ function initialize() {
 
 function handleGeolocationData(latitude, longitude){
     var screenQuery = "&sWidth="+screen.width+"&sHeight="+screen.height;
-    window.location = "/?lat="+latitude+"&long="+longitude+screenQuery;
+    var fullQuery = "/?lat="+latitude+"&long="+longitude+screenQuery;
+    // window.location = fullQuery;
+    // TODO: create endpoint that just recalculates and returns SVG 
+    //   so that i dont have to do some strings processing here
+    $.ajax({
+        url: fullQuery, 
+        type: "get",
+        success: function(data, status){
+            if (status === "success") {
+                const svgHtml = data.substring(
+                    data.indexOf("<svg"), 
+                    data.indexOf("</svg>") + 6
+                );
+                console.log(svgHtml);
+                const currentSvg = document.querySelector("svg");
+                const newSvg = document.createElement("svg");
+                newSvg.innerHTML = svgHtml;
+                currentSvg.parentNode.replaceChild(newSvg, currentSvg);
+            }
+        },
+    });
 }
 
 // TODO: I don't think this func actually does anything
