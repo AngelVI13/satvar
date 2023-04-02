@@ -15,6 +15,9 @@ func (s *Server) LoadTrack(filename string) error {
 
 	s.track = track
 	s.trackFile = filename
+	// TODO: this should be per session
+	s.route = gps.NewRoute()
+
 	return nil
 }
 
@@ -35,6 +38,11 @@ func (s *Server) SetLocation(long, lat float64) {
 		Longitude: long,
 		Latitude:  lat,
 	}
+	s.route.AddPoint(*s.location)
+}
+
+func (s *Server) Direction() float64 {
+	return s.route.Direction()
 }
 
 func (s *Server) GenerateMap(filename string) ([]byte, error) {
@@ -47,6 +55,6 @@ func (s *Server) GenerateMap(filename string) ([]byte, error) {
 		}
 	}
 
-	svgBytes := drawing.CreateMapImageSvg(s.Track(), s.Location())
+	svgBytes := drawing.CreateMapImageSvg(s.Track(), s.Location(), s.Direction())
 	return svgBytes, nil
 }

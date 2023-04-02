@@ -6,6 +6,7 @@ import (
 	"image"
 	"image/color"
 	"image/png"
+	"log"
 	"math"
 	"math/rand"
 	"os"
@@ -36,10 +37,13 @@ func CreateMapImage(
 	return err
 }
 
-func CreateMapImageSvg(track *gps.Track, userLocation *gps.Location) []byte {
-	// TODO: handle userLocation
+func CreateMapImageSvg(
+	track *gps.Track,
+	userLocation *gps.Location,
+	direction float64,
+) []byte {
 	mapPoints, user, width, height := mapData(track.Points, userLocation)
-	return drawRouteSvg(mapPoints, user, width, height)
+	return drawRouteSvg(mapPoints, user, width, height, direction)
 }
 
 func calculateViewBox(width, height int, userLoc *MapPoint, followUser bool) string {
@@ -68,6 +72,7 @@ func drawRouteSvg(
 	points []MapPoint,
 	userLoc *MapPoint,
 	width, height int,
+	direction float64,
 ) []byte {
 	startEndCircleSize := 10
 	chunkSize := 5
@@ -89,10 +94,11 @@ func drawRouteSvg(
 	var buf bytes.Buffer
 	s := svg.New(&buf)
 
-	followUser := true
+	followUser := false
 	viewBox := calculateViewBox(width, height, userLoc, followUser)
 	preserveAspectRatio := "preserveAspectRatio=\"xMinYMin meet\""
-	s.Startpercent(100, 100, viewBox, preserveAspectRatio)
+	rotation := rotate(direction+270, userLoc.x, height-userLoc.y)
+	s.Startpercent(100, 100, viewBox, preserveAspectRatio, rotation)
 
 	// draw start circle
 	startPointX := xPointsToDraw[0]
@@ -122,14 +128,9 @@ func drawRouteSvg(
 		prevX := xPointsToDraw[i-chunkSize]
 		prevY := yPointsToDraw[i-chunkSize]
 
-		imageAngle := angle(prevX, prevY, imageX, imageY)
+		imageAngle := gps.Angle(prevX, prevY, imageX, imageY)
 
-		transform := fmt.Sprintf(
-			"transform=\"rotate(%f, %d, %d)\"",
-			-imageAngle,
-			imageX,
-			imageY,
-		)
+		transform := rotate(-imageAngle, imageX, imageY)
 
 		emptyclose := "/>\n"
 		imageSvg := fmt.Sprintf(
@@ -148,6 +149,7 @@ func drawRouteSvg(
 
 	// draw user
 	if userLoc != nil {
+		log.Println(userLoc.x, height-userLoc.y, direction)
 		s.Circle(userLoc.x, height-userLoc.y, startEndCircleSize, "fill:green")
 	}
 
@@ -157,6 +159,10 @@ func drawRouteSvg(
 	return buf.Bytes()
 }
 
+func rotate(deg float64, x, y int) string {
+	return fmt.Sprintf("transform=\"rotate(%f, %d, %d)\"", deg, x, y)
+}
+
 // SVG funcs
 // href returns the href name and attribute
 func href(s string) string { return fmt.Sprintf(`xlink:href="%s"`, s) }
@@ -164,24 +170,6 @@ func href(s string) string { return fmt.Sprintf(`xlink:href="%s"`, s) }
 // dim returns the dimension string (x, y coordinates and width, height)
 func dim(x int, y int, w int, h int) string {
 	return fmt.Sprintf(`x="%d" y="%d" width="%d" height="%d"`, x, y, w, h)
-}
-
-// angle Find the angle between 2 points (considering top-left as 0, 0)
-// Taken from here: https://stackoverflow.com/a/27481611
-func angle(x1, y1, x2, y2 int) float64 {
-	// NOTE: Remember that most math has the Y axis as positive above the X.
-	// However, for screens we have Y as positive below. For this reason,
-	// the Y values are inverted to get the expected results.
-	deltaY := float64(y1 - y2)
-	deltaX := float64(x2 - x1)
-
-	resultRadians := math.Atan2(deltaY, deltaX)
-	resultDegrees := resultRadians * (180 / math.Pi)
-
-	if resultDegrees < 0 {
-		return 360 + resultDegrees
-	}
-	return resultDegrees
 }
 
 type MapPoint struct {
@@ -205,10 +193,10 @@ func mapData(
 	userLoc *gps.Location,
 ) (mapPoints []MapPoint, userLocation *MapPoint, width, height int) {
 	var (
-		minLat  float64 = 360.0
-		minLong float64 = 360.0
-		maxLat  float64 = 0.0
-		maxLong float64 = 0.0
+		minLat  = 360.0
+		minLong = 360.0
+		maxLat  = 0.0
+		maxLong = 0.0
 	)
 
 	for _, point := range points {

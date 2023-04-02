@@ -26,6 +26,7 @@ type Server struct {
 	track     *gps.Track
 	trackFile string
 	location  *gps.Location // TODO: this just works for 1 user
+	route     *gps.Route
 	debug     bool
 }
 

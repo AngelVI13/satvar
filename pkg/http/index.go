@@ -58,7 +58,7 @@ func (s *Server) processLocation(longitude, latitude string) {
 		track := s.Track()
 		point := track.Points[currentTrackIdx]
 
-		currentTrackIdx += 500
+		currentTrackIdx += 100
 		if currentTrackIdx >= len(track.Points) {
 			currentTrackIdx = 0
 		}
