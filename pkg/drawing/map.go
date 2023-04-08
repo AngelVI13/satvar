@@ -97,8 +97,10 @@ func drawRouteSvg(
 	followUser := false
 	viewBox := calculateViewBox(width, height, userLoc, followUser)
 	preserveAspectRatio := "preserveAspectRatio=\"xMinYMin meet\""
-	rotation := rotate(direction+270, userLoc.x, height-userLoc.y)
-	s.Startpercent(100, 100, viewBox, preserveAspectRatio, rotation)
+	s.Startpercent(100, 100, viewBox, preserveAspectRatio)
+
+	rotation := rotateNoTransform(-direction-90, userLoc.x, height-userLoc.y)
+	s.Gtransform(rotation)
 
 	// draw start circle
 	startPointX := xPointsToDraw[0]
@@ -154,6 +156,7 @@ func drawRouteSvg(
 	}
 
 	s.Gend()
+	s.Gend()
 	s.End()
 
 	return buf.Bytes()
@@ -161,6 +164,10 @@ func drawRouteSvg(
 
 func rotate(deg float64, x, y int) string {
 	return fmt.Sprintf("transform=\"rotate(%f, %d, %d)\"", deg, x, y)
+}
+
+func rotateNoTransform(deg float64, x, y int) string {
+	return fmt.Sprintf("rotate(%f, %d, %d)", deg, x, y)
 }
 
 // SVG funcs
