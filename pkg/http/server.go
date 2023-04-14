@@ -9,6 +9,7 @@ import (
 	"github.com/AngelVI13/satvar/pkg/gps"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/filesystem"
+	"github.com/gofiber/fiber/v2/middleware/session"
 	"github.com/gofiber/template/html"
 )
 
@@ -23,20 +24,24 @@ var MapUrlFull = fmt.Sprintf("%s/:lat/:long/:sWidth/:sHeight", MapUrl)
 
 type Server struct {
 	*fiber.App
-	track     *gps.Track
-	trackFile string
-	location  *gps.Location // TODO: this just works for 1 user
-	route     *gps.Route
-	debug     bool
+	sessionStore *session.Store
+	track        *gps.Track
+	trackFile    string
+	location     map[string]*gps.Location
+	route        map[string]*gps.Route
+	debug        bool
 }
 
 // Generate png image from gps points & current location.
 // Set the generated image as an html element to be displayed.
 // In JS obtain location once per second and call backend which
 // regenerates image and refreshes display
-func NewServer(viewsfs embed.FS, debug bool) *Server {
+func NewServer(viewsfs embed.FS, session *session.Store, debug bool) *Server {
 	s := Server{
-		debug: debug,
+		sessionStore: session,
+		location:     make(map[string]*gps.Location),
+		route:        make(map[string]*gps.Route),
+		debug:        debug,
 	}
 
 	engine := html.NewFileSystem(http.FS(viewsfs), ".html")

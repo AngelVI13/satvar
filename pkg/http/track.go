@@ -15,9 +15,6 @@ func (s *Server) LoadTrack(filename string) error {
 
 	s.track = track
 	s.trackFile = filename
-	// TODO: this should be per session
-	s.route = gps.NewRoute()
-
 	return nil
 }
 
@@ -29,23 +26,28 @@ func (s *Server) TrackLoaded(filename string) bool {
 	return s.track != nil && s.trackFile == filename
 }
 
-func (s *Server) Location() *gps.Location {
-	return s.location
+func (s *Server) Location(id string) *gps.Location {
+	return s.location[id]
 }
 
-func (s *Server) SetLocation(long, lat float64) {
-	s.location = &gps.Location{
+func (s *Server) SetLocation(id string, long, lat float64) {
+	loc := &gps.Location{
 		Longitude: long,
 		Latitude:  lat,
 	}
-	s.route.AddPoint(*s.location)
+	s.location[id] = loc
+
+	if _, exists := s.route[id]; !exists {
+		s.route[id] = gps.NewRoute()
+	}
+	s.route[id].AddPoint(*loc)
 }
 
-func (s *Server) Direction() float64 {
-	return s.route.Direction()
+func (s *Server) Direction(id string) float64 {
+	return s.route[id].Direction()
 }
 
-func (s *Server) GenerateMap(filename string) ([]byte, error) {
+func (s *Server) GenerateMap(filename, id string) ([]byte, error) {
 	if !s.TrackLoaded(filename) {
 		// TODO: visualize gps coordinates on map:
 		// https://www.here.com/learn/blog/reverse-geocoding-a-location-using-golang
@@ -55,6 +57,6 @@ func (s *Server) GenerateMap(filename string) ([]byte, error) {
 		}
 	}
 
-	svgBytes := drawing.CreateMapImageSvg(s.Track(), s.Location(), s.Direction())
+	svgBytes := drawing.CreateMapImageSvg(s.Track(), s.Location(id), s.Direction(id))
 	return svgBytes, nil
 }

@@ -5,18 +5,23 @@ import (
 )
 
 func (s *Server) HandleMap(c *fiber.Ctx) error {
+	userId, err := s.userId(c)
+	if err != nil {
+		return err
+	}
+
 	if !s.TrackLoaded(mapFilename) {
 		s.LoadTrack(mapFilename)
 	}
 	longitude := c.Params("long")
 	latitude := c.Params("lat")
-	s.processLocation(longitude, latitude)
+	s.processLocation(userId, longitude, latitude)
 
 	screenWidth := c.Params("sWidth")
 	screenHeight := c.Params("sHeight")
-	s.processScreenSize(screenWidth, screenHeight)
+	s.processScreenSize(userId, screenWidth, screenHeight)
 
-	svgBytes, err := s.GenerateMap(mapFilename)
+	svgBytes, err := s.GenerateMap(mapFilename, userId)
 	if err != nil {
 		return c.SendStatus(501)
 	}
