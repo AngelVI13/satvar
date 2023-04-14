@@ -6,7 +6,6 @@ import (
 	"image"
 	"image/color"
 	"image/png"
-	"log"
 	"math"
 	"math/rand"
 	"os"
@@ -99,8 +98,10 @@ func drawRouteSvg(
 	preserveAspectRatio := "preserveAspectRatio=\"xMinYMin meet\""
 	s.Startpercent(100, 100, viewBox, preserveAspectRatio)
 
-	rotation := rotateNoTransform(-direction-90, userLoc.x, height-userLoc.y)
-	s.Gtransform(rotation)
+	if userLoc != nil {
+		rotation := rotateNoTransform(-direction-90, userLoc.x, height-userLoc.y)
+		s.Gtransform(rotation)
+	}
 
 	// draw start circle
 	startPointX := xPointsToDraw[0]
@@ -151,11 +152,12 @@ func drawRouteSvg(
 
 	// draw user
 	if userLoc != nil {
-		log.Println(userLoc.x, height-userLoc.y, direction)
 		s.Circle(userLoc.x, height-userLoc.y, startEndCircleSize, "fill:green")
 	}
 
-	s.Gend()
+	if userLoc != nil {
+		s.Gend()
+	}
 	s.Gend()
 	s.End()
 

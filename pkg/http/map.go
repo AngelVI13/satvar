@@ -5,6 +5,9 @@ import (
 )
 
 func (s *Server) HandleMap(c *fiber.Ctx) error {
+	if !s.TrackLoaded(mapFilename) {
+		s.LoadTrack(mapFilename)
+	}
 	longitude := c.Params("long")
 	latitude := c.Params("lat")
 	s.processLocation(longitude, latitude)

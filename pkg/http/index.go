@@ -9,9 +9,13 @@ import (
 	"github.com/sujit-baniya/flash"
 )
 
-var myNumber int
+const mapFilename = "Vilnius100km.gpx"
 
 func (s *Server) HandleIndex(c *fiber.Ctx) error {
+	if !s.TrackLoaded(mapFilename) {
+		s.LoadTrack(mapFilename)
+	}
+
 	longitude := c.Query("long")
 	latitude := c.Query("lat")
 	s.processLocation(longitude, latitude)
@@ -23,8 +27,7 @@ func (s *Server) HandleIndex(c *fiber.Ctx) error {
 	data := flash.Get(c)
 	data["Title"] = "Satvar"
 
-	filename := "Vilnius100km.gpx"
-	svgBytes, err := s.GenerateMap(filename)
+	svgBytes, err := s.GenerateMap(mapFilename)
 	if err != nil {
 		flash.WithError(c, flashMessage(err.Error(), LevelDanger))
 		return c.Render(IndexView, data)
@@ -49,10 +52,10 @@ func (s *Server) processLocation(longitude, latitude string) {
 	)
 
 	if s.debug {
-		filename := "Vilnius100km.gpx"
+		mapFilename := "Vilnius100km.gpx"
 		// This imitates a person going through the course route
-		if !s.TrackLoaded(filename) {
-			s.LoadTrack(filename)
+		if !s.TrackLoaded(mapFilename) {
+			s.LoadTrack(mapFilename)
 		}
 
 		track := s.Track()
