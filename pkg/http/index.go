@@ -52,7 +52,6 @@ func (s *Server) processLocation(longitude, latitude string) {
 	)
 
 	if s.debug {
-		mapFilename := "Vilnius100km.gpx"
 		// This imitates a person going through the course route
 		if !s.TrackLoaded(mapFilename) {
 			s.LoadTrack(mapFilename)

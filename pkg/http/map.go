@@ -16,8 +16,7 @@ func (s *Server) HandleMap(c *fiber.Ctx) error {
 	screenHeight := c.Params("sHeight")
 	s.processScreenSize(screenWidth, screenHeight)
 
-	filename := "Vilnius100km.gpx"
-	svgBytes, err := s.GenerateMap(filename)
+	svgBytes, err := s.GenerateMap(mapFilename)
 	if err != nil {
 		return c.SendStatus(501)
 	}
