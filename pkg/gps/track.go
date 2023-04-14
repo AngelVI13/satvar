@@ -26,6 +26,7 @@ func NewRoute() *Route {
 }
 
 func (r *Route) AddPoint(location Location) {
+	// TODO: this can grow infinetely -> handle this
 	r.Points = append(r.Points, location)
 }
 
